@@ -16,6 +16,7 @@ public class OnlineBookstoreSystem {
             // Adding valid books
             bookstore.addBook(book1);
             bookstore.addBook(book2);
+            
 
             // Display the list of available books
             List<Book> availableBooks = bookstore.getAvailableBooks();
@@ -23,6 +24,8 @@ public class OnlineBookstoreSystem {
             for (Book book : availableBooks) {
                 System.out.println(book);
             }
+
+            
 
             // Attempting to add a duplicate book (should throw exception)
             System.out.println("\nAttempting to add a duplicate book:");
@@ -111,11 +114,11 @@ public class OnlineBookstoreSystem {
                 System.out.println("Order placed: " + order3);
             } catch (BookstoreException e) {
                 user3.clearCart();
-                book1.setQuantity(8);
                 System.out.println("Error adding to cart : " + e.getMessage());
             }
-            
-            System.out.println("Quantity of Book1 is back to 9");
+
+            book1.setQuantity(8);
+            System.out.println("Quantity of Book1 is back to 8");
 
             try {
                 user3.addToCart(book1);
