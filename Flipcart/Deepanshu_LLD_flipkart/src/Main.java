@@ -66,41 +66,45 @@ public class Main {
                     } catch (ParcelDeliveryException e) {
                             System.out.println("Error: " + e.getMessage());
                     }
+            try {
+                    service.cancelOrder("id-1");
+            } catch (ParcelDeliveryException e) {
+                    System.out.println("Error: " + e.getMessage());
+            }
 
-            //service.cancelOrder("id-2");
 
-                    try{
-                    service.pickUpOrder("Alice", "id-2");
-                    service.pickUpOrder("Bob", "id-1");
-                    } catch (ParcelDeliveryException e) {
-                            System.out.println("Error: " + e.getMessage());
-                    }
-                    
-                    
+           
 
                     System.out.println();
+
+            try{
+                    service.onboardDriver("Steve");
+
+            } catch (ParcelDeliveryException e) {
+                    System.out.println("Error: " + e.getMessage());
+            }
 
 
                     try {
                     service.placeOrder("john@gmail.com", "Cold Drink", "123 street", "id-3");
-                            TimeUnit.SECONDS.sleep(10);
                     } catch (ParcelDeliveryException e) {
                     System.out.println("Error: " + e.getMessage());
                     }
                     
-                    try{
-                        service.onboardDriver("Steve");
-                        service.pickUpOrder("Steve", "id-3");
-                    } catch (ParcelDeliveryException e) {
-                            System.out.println("Error: " + e.getMessage());
-                    }
+                    
 
                     service.getOrderStatus("id-1");
                     service.getDriverStatus("Bob");
                     System.out.println();
 
-                    service.deliverOrder("Alice", "id-1");
-                    service.deliverOrder("Bob", "id-2");
+            try {
+
+                    service.deliverOrder("id-1");
+            } catch (ParcelDeliveryException e1) {
+                    System.out.println("Error: " + e1.getMessage());
+            }
+
+                   
                     System.out.println();
 
             try {
@@ -109,19 +113,61 @@ public class Main {
             } catch (ParcelDeliveryException e1) {
                     System.out.println("Error: " + e1.getMessage());
                     }
-                   
 
-                    
-                    service.getOrderStatus("id-1");
+
+
+            try {
+
+                    service.deliverOrder("id-2");
+            } catch (ParcelDeliveryException e1) {
+                    System.out.println("Error: " + e1.getMessage());
+            }
+            try {
+                    service.placeOrder("john@gmail.com", "Cold Drink", "123 street", "id-4");
+            } catch (ParcelDeliveryException e) {
+                    System.out.println("Error: " + e.getMessage());
+            }
+            try {
+
+                    service.deliverOrder("id-3");
+            } catch (ParcelDeliveryException e1) {
+                    System.out.println("Error: " + e1.getMessage());
+            }
+            try {
+                    service.placeOrder("john@gmail.com", "Cold Drink", "123 street", "id-5");
+            } catch (ParcelDeliveryException e) {
+                    System.out.println("Error: " + e.getMessage());
+            }
+            try {
+
+                    service.deliverOrder("id-4");
+            } catch (ParcelDeliveryException e1) {
+                    System.out.println("Error: " + e1.getMessage());
+            }
+            try {
+
+                    service.deliverOrder("id-5");
+            } catch (ParcelDeliveryException e1) {
+                    System.out.println("Error: " + e1.getMessage());
+            }
+
+            try {
+                    service.placeOrder("john@gmail.com", "Cold Drink", "123 street", "id-6");
+            } catch (ParcelDeliveryException e) {
+                    System.out.println("Error: " + e.getMessage());
+            }
                     System.out.println();
+            try {
+
+                    service.deliverOrder("id-6");
+            } catch (ParcelDeliveryException e1) {
+                    System.out.println("Error: " + e1.getMessage());
+            }
                     
-                     
-           
+            service.getDriverOrderList("Bob");
+            service.getDriverOrderList("Alice");
+            service.getDriverOrderList("Steve");
             
-            
-            
-            
-            System.exit(0);
 
         }
     }

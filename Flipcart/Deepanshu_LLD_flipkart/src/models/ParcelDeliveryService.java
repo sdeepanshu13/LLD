@@ -15,6 +15,7 @@ public class ParcelDeliveryService {
     private final Map<String, Order> orders = new ConcurrentHashMap<>();
     private final List<String> deliverableItems = Arrays.asList("Pizza", "Burger", "Cold Drink");
     private final Notification notification = new Notification();
+    private final Map<String,Order> pendingOrders = new LinkedHashMap<>();
     
     public synchronized void onboardCustomer(String name, String email, String phoneNumber, String address){
         
@@ -36,7 +37,7 @@ public class ParcelDeliveryService {
         notification.sendNotification( name," Welcome Driver" );
     }
     
-    public synchronized void placeOrder(String customerEmail, String item, String deliveryAddress, String orderID1){
+    public synchronized void placeOrder(String customerEmail, String item, String deliveryAddress, String orderID1) throws InterruptedException {
         if(!deliverableItems.contains(item)){
             throw new ParcelDeliveryException("Items not available");
         }
@@ -46,81 +47,116 @@ public class ParcelDeliveryService {
         }
         String orderId= orderID1;
         Customer customer = customers.get(customerEmail);
-        Order order = new Order(orderId, customer, item, deliveryAddress);
+        Order order = new Order(orderId, customer, item, deliveryAddress, "Order-Placed");
+        
         orders.put(orderId, order);
         
         assignOrderToDriver(order);
-        notification.sendNotification(customerEmail, "Order Placed. Order-id is:" + orderId +" Driver Name is: "+ order.getDriver().getName());
+        if(order.getDriver() != null) {
+            notification.sendNotification(customerEmail, "Order Placed. Order-id is:" + orderId + " Driver Name is: " + order.getDriver().getName());
+        }
+        //else throw new ParcelDeliveryException("wait");
     }
     
-    private synchronized void assignOrderToDriver(Order order){
+    private synchronized void assignOrderToDriver(Order order) throws InterruptedException {
         Optional<Driver> availableDriver = drivers.values().stream().filter(Driver::isAvailable).findFirst();
         if(availableDriver.isPresent()){
             Driver driver = availableDriver.get();
             order.setDriver(driver);
             driver.setAvailable(false);
+            driver.setOrderAssignedToDriver(order.getId());
+            order.setOrderStatus("Driver-Assigned");
             notification.sendNotification(driver.getName(), "Order "+ order.getId()+ " is assigned to you");
-            startOrderPickupTimer(order);
+            order.setOrderStatus("In-Transit");
         } else{
             notification.sendNotification("All drivers busy", " Wait for sometime");
-            startOrderPickupTimer(order);
-            throw new ParcelDeliveryException("Waiting for Driver");
+            startOrderPickupWaitTimer(order);
             
         }
     }
     
-    private void startOrderPickupTimer(Order order){
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.schedule( () ->{
-            if(order.isCancelled()){
-                return;
+    
+    private void startOrderPickupWaitTimer(Order order) {
+        // Start a new thread for the long polling
+        new Thread(() -> {
+            long endTime = System.currentTimeMillis() + 60000; // 60 seconds from now
+            boolean driverAssigned = false;
+
+            while (System.currentTimeMillis() < endTime) {
+                // Check for available drivers
+                Optional<Driver> availableDriver = drivers.values().stream()
+                        .filter(Driver::isAvailable)
+                        .findFirst();
+
+                if (availableDriver.isPresent()) {
+                    // Assign the order to the available driver
+                    Driver driver = availableDriver.get();
+                    order.setDriver(driver);
+                    driver.setAvailable(false);
+                    driver.setOrderAssignedToDriver(order.getId());
+                    order.setOrderStatus("Driver-Assigned");
+                    notification.sendNotification(driver.getName(), "Order " + order.getId() + " is assigned to you.");
+                    order.setOrderStatus("In-Transit");
+                    driverAssigned = true;
+                    break; // Exit the loop if a driver is assigned
+                }
+
+                try {
+                    Thread.sleep(1000); // Wait for 1 second before checking again
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // Restore interrupted status
+                    return; // Exit the method if interrupted
+                }
             }
-            notification.sendNotification(order.getCustomer().getName(), "Order "+ order.getId()+ "is cancelled due to no driver available");
-        }, 10, TimeUnit.SECONDS);
-        
+
+            // If no driver was assigned after 60 seconds, cancel the order
+            if (!driverAssigned) {
+                order.cancel();
+                notification.sendNotification(order.getCustomer().getEmail(), "Order " + order.getId() + " is canceled due to no driver availability.");
+            }
+        }).start(); // Start the polling in a new thread
     }
-    
-    public synchronized  void pickUpOrder(String drivername, String orderId){
+
+
+
+
+    public void deliverOrder( String orderId) {
         
-        Order order = orders.get(orderId);
-        
-        if( order== null || order.isCancelled() ){
-            throw new ParcelDeliveryException("Order cannot be picked up");
-        }
-        Driver driver = drivers.get(drivername);
-        if(driver == null){
-            throw new ParcelDeliveryException("Driver not found");
-        }
-        
-        order.setDriver(driver);
-        driver.setAvailable(false);
-        notification.sendNotification(order.getCustomer().getName(), "Order "+ orderId+" has been picked up by "+ drivername);
-        
+                Order order = orders.get(orderId);
+                Driver driver = order.getDriver();
+
+
+
+
+
+                // Check if the order is valid for delivery
+                if (order == null || order.isCancelled()) {
+                    System.out.println("Order cannot be delivered.");
+                    return; // Exit if the order is not valid
+                }
+                order.setOrderStatus("Delievred");
+
+
+                if (driver != null) {
+                    driver.setAvailable(true);
+                    notification.sendNotification(order.getCustomer().getName(), "Order: " + orderId + " has been delivered by " + driver.getName() + ": to this address: " + order.getDeliveryAddress());
+                }// 10 seconds
+            
     }
-    
-    public synchronized void deliverOrder(String driverName, String orderId){
-        Order order = orders.get(orderId);
-        
-        if(order == null || order.isCancelled()){
-            throw new ParcelDeliveryException("order cannot be delivered");
-        }
-        
-        order.markAsDelivered();
-        Driver driver = drivers.get(driverName);
-        driver.setAvailable(true);
-        notification.sendNotification(order.getCustomer().getName(), "Order: "+orderId+" has been delivered by "+ driverName+": to this address: "+ order.getDeliveryAddress());
-        
-    }
-    
+
+
     public synchronized  void cancelOrder(String orderId){
         Order order = orders.get(orderId);
-        if(order != null && !order.isCancelled() && order.getDriver() != null){
+        if(order != null && !order.isCancelled() && ( order.getOrderStatus() == "Driver-Assigned") ){
             order.cancel();
             notification.sendNotification(order.getCustomer().getEmail(), "Order "+ orderId+" has been cancelled");
             
         }
-        else if(order.getDriver() == null){
+        else if(order.getOrderStatus() == "Delivered"){
             throw new ParcelDeliveryException("Order already delivered");
+        }
+        else if(order.getOrderStatus() == "In-Transit"){
+            throw new ParcelDeliveryException("Order in Transit. Cannot be cancelled");
         }
         else {
             throw  new ParcelDeliveryException("Order not found");
@@ -130,13 +166,11 @@ public class ParcelDeliveryService {
     public synchronized void getOrderStatus(String orderId){
         Order order = orders.get(orderId);
         
-        if(order != null && order.getDriver() != null){
-            String status = order.isCancelled() ? "cancelled" : "in transit";
+        if(order != null ){
+            String status = order.getOrderStatus();
             System.out.println("order details -> order ID: "+ orderId+" Status is: "+ status );
-        } else if (order.getDriver() == null) {
-            String status = "Delivered";
-            System.out.println("order details -> order ID: "+ orderId+" Status is: "+ status );
-        } else{
+        } 
+        else{
             throw new ParcelDeliveryException("Order not found");
         }
     }
@@ -150,6 +184,17 @@ public class ParcelDeliveryService {
             throw new ParcelDeliveryException("Driver not found");
         }
         
+    }
+    
+    public synchronized  void getDriverOrderList(String driverName){
+        
+        Driver driver= drivers.get(driverName);
+        if(driver != null){
+            System.out.println("Driver "+ driverName + " is" + driver.getOrderAssignedToDriver());
+        }
+        else{
+            throw new ParcelDeliveryException("Driver not found");
+        }
     }
     
 }

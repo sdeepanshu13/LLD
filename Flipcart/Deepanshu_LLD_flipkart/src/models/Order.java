@@ -8,10 +8,11 @@ public class Order {
     private final String deliveryAddress;
     private Driver driver;
     private boolean isCancelled = false;
-    
-    public Order(String id, Customer customer, String item, String deliveryAddress) {
+    private String orderStatus = "";
+    public Order(String id, Customer customer, String item, String deliveryAddress, String orderStatus) {
         
         this.id = id;
+        this.orderStatus = orderStatus;
         this.customer = customer;
         this.item = item;
         this.deliveryAddress = deliveryAddress;
@@ -44,16 +45,25 @@ public class Order {
         return isCancelled;
     }
     
+    public String getOrderStatus(){
+        return orderStatus;
+    }
+
+    public void setOrderStatus(String orderStatus){
+        this.orderStatus=orderStatus;
+    }
+    
     public void cancel(){
         
         this.isCancelled= true;
+        this.orderStatus = "Cancelled";
         if(driver != null){
             driver.setAvailable(true);
         }
     }
     
     public void markAsDelivered(){
-        this.driver = null;
+        this.orderStatus = "Delivered";
         
     }
 }
