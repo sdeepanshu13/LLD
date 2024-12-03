@@ -119,10 +119,10 @@ public static void main(String[] args) throws InterruptedException {
         service.rateDriver("id-6", 4);
         service.getDriverOrderList("12");
         service.getDriverOrderList("98");
-        service.getDriverOrderList("56");
+       // service.getDriverOrderList("56");
         service.getAverageRating("12");
         service.getAverageRating("98");
-        service.getAverageRating("56");
+        //service.getAverageRating("56");
         service.getDriverRating("12", service.drivers.get("12").getOrderAssignedToDriver().get(0));
 
     } catch (ParcelDeliveryException e) {

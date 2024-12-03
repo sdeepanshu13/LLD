@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Flipcart">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/Flipcart.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
