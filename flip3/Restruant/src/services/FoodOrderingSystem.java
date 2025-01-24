@@ -26,7 +26,7 @@ public class FoodOrderingSystem {
         System.out.println("Restaurant " + name + " added. with capacity: " + restaurant.getMaxCapacity());
     }
 
-    public synchronized void updateRestaurantMenu(String name, Map<String, Integer> newMenu) {
+        public synchronized void updateRestaurantMenu(String name, Map<String, Integer> newMenu) {
         System.out.println("Updating menu for restaurant: " + name + " with new menu: " + newMenu);
         Restaurant restaurant = restaurants.get(name);
         if (restaurant != null) {
@@ -66,6 +66,7 @@ public class FoodOrderingSystem {
 
     // Build a string with restaurant names
     StringBuilder restaurantNames = new StringBuilder();
+
     for (Restaurant restaurant : allocation.keySet()) {
         restaurantNames.append(restaurant.getName()).append(", ");
     }
@@ -94,6 +95,7 @@ public class FoodOrderingSystem {
         System.out.println("System Stats: \n" + stats);
         return stats.toString();
     }
+
 
     public synchronized void fulfillAllOrders(String rname) {
         System.out.println("Fulfilling orders for...   "+ rname);
