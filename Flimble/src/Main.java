@@ -30,6 +30,7 @@ public class Main {
         profileService.createProfile("13", "Mia", 30, "F");
         profileService.createProfile("14", "Nick", 31, "M");
         profileService.createProfile("15", "Olivia", 32, "F");
+        profileService.createProfile("16", "Peter", 33, "M");
 
 
         System.out.println("Profiles created.\n");
